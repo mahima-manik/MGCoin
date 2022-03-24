@@ -5,9 +5,61 @@ ERC20 = Total Supply 1.5 Billion RD Coins
 ### Staking contract requirements:
 
 1. 10 percent of the total supply of RDC will be allocated for staking so 150,000,000 million rdc
-2. Staked RDC tokens are not liquid and may not be transferred or sold . 
+2. Staked RDC tokens are not liquid and may not be transferred or sold. 
 3. Staked RDC tokens may be unstaked over a period of four weeks, with 25% of the total amount of tokens being unstaked becoming available as liquid RDC tokens at the end of each of the four weeks from when the unstaking operation is submitted. 
 4. The stake reward vesting should last 60 months for the 10 percent allocation.
+
+Questions:
+1. Can one address submit more than one stakes?
+2. Can a stake amount be partially withdrawn?
+3. What is staking allocation (10% of total supply)?
+4. What is reward strategy? 10% of amount staked every month for 60 months? Example: if someone staked 100rdc, by end of 60 months - 600 rdc is rewarded (10 rdc every month)
+5. Can owner unstake when some reward is already given? Example: 100 rdc staked, 10 months passed (100 rdc rewarded),  on unstake(), owner should be given 25 rdc over 4 weeks?
+
+Approach 1
+- burn() token during stake and mint() during withdraw/reward.
+- Create a StakingContract
+- Call the functions of StakingContract in the RDCoin
+
+
+**Design:**
+
+Data Members:
+```
+struct Stake {
+    uint amount;    // total amount staked initially (>0)
+    uint depositTime;   // initial stake time
+    uint withdrawnAmount;   // withdrawn stake amount
+    uint lastWithdrawTime; // last withdraw time
+    uint lastRewardTime;    // last reward time
+    uint rewardAmount;  // total reward given
+}
+
+mapping (address => Stake[]) internal stakes;
+```
+
+Methods:
+
+```
+/* Stakes given amount for msg.sender */
+function addStake (uint _amount) returns (bool);
+
+/* Bestows 25% of the stake to msg.sender */
+function removeStake (uint _stakeIndex) returns (bool);
+
+/* rewards msg.sender for the stakes added */
+function reward ();
+
+/* Returns list of all active stakes of msg.sender */
+function getStakes ();
+```
+
+Events:
+```
+event Stake(address owner, uint amount);
+event Reward(address owner, uint amount);
+event Withdraw(address owner, uint amount);
+```
 
 ---
 
