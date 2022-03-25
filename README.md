@@ -10,10 +10,10 @@ ERC20 = Total Supply 1.5 Billion RD Coins
 4. The stake reward vesting should last 60 months for the 10 percent allocation.
 
 Questions:
-1. Can one address submit more than one stakes?
-2. Can a stake amount be partially withdrawn?
+1. Can one address submit more than one stakes? -> No, cannot withdraw anything for 28 days
+2. Can a stake amount be partially withdrawn? -> Yes, upto 25%
 3. What is staking allocation (10% of total supply)?
-4. What is reward strategy? 10% of amount staked every month for 60 months? Example: if someone staked 100rdc, by end of 60 months - 600 rdc is rewarded (10 rdc every month)
+4. What is reward strategy? 10% of amount staked every month for 60 months? Example: if someone staked 100rdc, by end of 60 months - 600 rdc is rewarded (10 rdc every month):
 5. Can owner unstake when some reward is already given? Example: 100 rdc staked, 10 months passed (100 rdc rewarded),  on unstake(), owner should be given 25 rdc over 4 weeks?
 
 Approach 1
@@ -35,20 +35,20 @@ struct Stake {
     uint rewardAmount;  // total reward given
 }
 
-mapping (address => Stake[]) internal stakes;
+mapping (address => Stake) internal stakes;
 ```
 
 Methods:
 
 ```
 /* Stakes given amount for msg.sender */
-function addStake (uint _amount) returns (bool);
+function stake (uint _amount) returns (bool);
 
 /* Bestows 25% of the stake to msg.sender */
-function removeStake (uint _stakeIndex) returns (bool);
+function withdraw (uint _stakeIndex) returns (bool);
 
 /* rewards msg.sender for the stakes added */
-function reward ();
+function getReward ();
 
 /* Returns list of all active stakes of msg.sender */
 function getStakes ();
@@ -68,6 +68,29 @@ event Withdraw(address owner, uint amount);
 1. 5 percent of the total supply of RDC will be allocated for airdrop so 75,000,000 million rdc.
 2. Rather than have a specific airdrop date and time, RDC tokens will be airdropped to asset holders when new transactions occur at RD Land daily over 1 year. Therefore every early holder can earn RDC airdrop with every transaction, including their own, within the RD Land ecosystem.
 3. The airdrop reward vesting should last 12 months for the 5 percent allocation.
+
+Questions:
+1. 
+
+**Design**
+Create an Airdrop contract and call the functions in RDCoin
+
+Data members:
+```
+uint dropStartTime; // when RDCoin is deployed
+uint lastDropTime;  // time when last airdrop was done to an address
+uint dropEndTime;   // 12 months after dropStartTime
+uint MAX_LIMIT = 150;
+mapping (address => uint) airdrops;
+```
+Methods:
+```
+/*
+    Check if its been 24 hours since lastDropTime
+    Mint one RDCoin to _address
+*/
+function drop(address _address);
+```
 
 ### Working
 

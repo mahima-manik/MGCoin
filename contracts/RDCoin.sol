@@ -35,11 +35,100 @@ abstract contract Context {
     }
 }
 
+contract Stakeable {
 
-contract  RDCoin is Context, IERC20, IERC20Metadata {
+    struct Stake {
+        uint amount;            // total amount staked initially (>0)
+        uint depositTime;       // initial stake time
+        uint withdrawnAmount;   // withdrawn stake amount
+        uint lastWithdrawTime;  // last withdraw time
+        uint lastRewardTime;    // last reward time
+        uint rewardAmount;      // total reward given
+    }
+
+    event Staked(address account, uint amount);
+    event Reward(address account, uint amount);
+    event Withdraw(address account, uint amount);
+
+    mapping (address => Stake) private stakes;
+    uint constant ONE_WEEK = 604800000;
+    uint constant ONE_MONTH = 2629800000;
+
+    modifier sanityCheck (address account, uint amount) {
+        require(amount > 0, "stake amount <= 0");
+        require(account != address(0), "cannot be zero address");
+        _;
+    }
+
+    function stake (address account, uint256 amount) internal sanityCheck(account, amount) {
+        require(amount > 0, "stake amount <= 0");
+        uint currentTime = block.timestamp;
+        Stake storage _stake = stakes[account];
+        if (_stake.amount == 0) {
+            _stake.depositTime = currentTime;
+            _stake.lastWithdrawTime = currentTime;
+        }
+        _stake.amount = amount;
+    }
+    
+    function withdraw(address account, uint amount) internal sanityCheck(account, amount) {
+        
+        uint currentTime = block.timestamp;
+        Stake storage _stake = stakes[account];
+        
+        // Check withdraw conditions
+        require (_stake.amount > 0, "stake amount <= 0");
+        uint withdrawLimit = (_stake.amount * 25) / 100;
+        
+        if (withdrawLimit <= amount) {
+            revert ("withdraw limit exceeded");
+        }
+        
+        if (_stake.amount - _stake.withdrawnAmount <= 0)   {
+            revert ("amount not available to withdraw");
+        }
+        
+        if (!timeDifference(_stake.lastWithdrawTime, currentTime, ONE_WEEK))   {
+            revert ("cannot withdraw before one week");
+        }
+
+        _stake.withdrawnAmount += amount;
+        _stake.lastWithdrawTime = currentTime;
+        
+        // TODO: Reset the _stake.amount to 0 when everything is withdrawn
+    }
+    
+    function reward(address account) internal returns (uint) {
+        uint currentTime = block.timestamp;
+        Stake storage _stake = stakes[account];
+        
+        // Check reward condition
+        bool isEligible = timeDifference(_stake.lastWithdrawTime, currentTime, ONE_MONTH);
+        require(isEligible, "cannot reward before one month");
+
+        uint stakedAmount = _stake.amount - _stake.withdrawnAmount;
+        uint rewardAmount = (stakedAmount * 10) / 100;
+        
+        return rewardAmount;
+    }
+
+    function getStakes(address account) internal view returns (uint) {
+        Stake storage _stake = stakes[account];
+        if (_stake.amount == 0) return 0;
+        return _stake.amount - _stake.withdrawnAmount;
+    }
+
+    function timeDifference(uint from, uint to, uint difference) private pure returns (bool) {
+        return true;
+    }
+
+}
+
+
+contract RDCoin is Context, IERC20, IERC20Metadata, Stakeable {
     string private _name= "RDCoin";
     string private _symbol="RDC";
-    uint private total_token_supply =1500000000;
+    uint private total_token_supply = 1500000000;
     uint256 private _totalSupply;
 
     mapping(address => uint256) private _balances;
@@ -217,5 +306,26 @@ contract  RDCoin is Context, IERC20, IERC20Metadata {
         uint256 amount
     ) internal virtual {}
 
+    function stake (uint amount) external {
+        stake(msg.sender, amount);
+        _burn(msg.sender, amount);
+        emit Staked(msg.sender, amount);
+    }
 
+    function withraw(uint amount) external {
+        withdraw(msg.sender, amount);
+        _mint(msg.sender, amount);
+        emit Withdraw(msg.sender, amount);
+    }
+
+    function reward() external {
+        uint256 rewardAmount = reward(msg.sender);
+        _mint(msg.sender, rewardAmount);
+        emit Reward(msg.sender, rewardAmount);
+    }
+
+    function getStakes() external view returns (uint _stake) {
+        _stake = getStakes(msg.sender);
+        return _stake;
+    }
 }
