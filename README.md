@@ -104,3 +104,7 @@ function drop(address _address);
 - Compile the contract
 
     `truffle compile`
+
+
+Questions?
+1. Visibility of airdrops and stakes?
