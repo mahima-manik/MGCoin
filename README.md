@@ -108,3 +108,14 @@ function drop(address _address);
 
 Questions?
 1. Visibility of airdrops and stakes?
+Public
+
+Staking must pass test for:
+- Users should be able to unstake up to 25 percent of the initial stake every 28 days or 4 weeks.
+- Rewards should not exceed 10 percent of the total supply of rdcoin allocated to staking for the period of 60 months
+- Users should be able to stake, unstake and redeem rewards
+
+Airdrop must pass test for:
+- Airdrops should not exceed over the 5 percent allocation from total supply of rdcoin during the 12 months
+
+
