@@ -43,7 +43,6 @@ contract Stakeable {
         uint withdrawnAmount;   // withdrawn stake amount
         uint lastWithdrawTime;  // last withdraw time
         uint lastRewardTime;    // last reward time
-        uint rewardAmount;      // total reward given
     }
 
     event Staked(address account, uint amount);
@@ -60,15 +59,15 @@ contract Stakeable {
         _;
     }
 
-    function stake (address account, uint256 amount) internal sanityCheck(account, amount) {
-        require(amount > 0, "stake amount <= 0");
+    function stake (address account, uint256 amount) internal sanityCheck(account, amount) { 
         uint currentTime = block.timestamp;
         Stake storage _stake = stakes[account];
         if (_stake.amount == 0) {
             _stake.depositTime = currentTime;
             _stake.lastWithdrawTime = currentTime;
+            _stake.lastRewardTime = currentTime;
         }
-        _stake.amount = amount;
+        _stake.amount += amount;
     }
     
     function withdraw(address account, uint amount) internal sanityCheck(account, amount) {
@@ -96,6 +95,17 @@ contract Stakeable {
         _stake.lastWithdrawTime = currentTime;
         
         // TODO: Reset the _stake.amount to 0 when everything is withdrawn
+        uint stakedAmount = _stake.amount - _stake.withdrawnAmount;
+
+        // All staked token is withdrawn
+        if (stakedAmount == 0)  {
+            _stake.amount = 0;
+            _stake.depositTime = 0;
+            _stake.lastRewardTime = 0;
+            _stake.lastWithdrawTime = 0;
+            _stake.withdrawnAmount = 0;
+            revert("no token staked");
+        }
     }
     
     function reward(address account) internal returns (uint) {
@@ -107,8 +117,20 @@ contract Stakeable {
         require(isEligible, "cannot reward before one month");
 
         uint stakedAmount = _stake.amount - _stake.withdrawnAmount;
+
+        // All staked token is withdrawn
+        if (stakedAmount == 0)  {
+            _stake.amount = 0;
+            _stake.depositTime = 0;
+            _stake.lastRewardTime = 0;
+            _stake.lastWithdrawTime = 0;
+            _stake.withdrawnAmount = 0;
+            revert("no token staked");
+        }
+
         uint rewardAmount = (stakedAmount * 10) / 100;
         
+        _stake.lastRewardTime = currentTime;
         return rewardAmount;
     }
 
@@ -307,6 +329,7 @@ contract RDCoin is Context, IERC20, IERC20Metadata, Stakeable {
     ) internal virtual {}
 
     function stake (uint amount) external {
+        require(balanceOf(msg.sender) >= amount, "insufficient balance");
         stake(msg.sender, amount);
         _burn(msg.sender, amount);
         emit Staked(msg.sender, amount);
