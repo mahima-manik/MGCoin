@@ -117,5 +117,5 @@ Staking must pass test for:
 
 Airdrop must pass test for:
 - Airdrops should not exceed over the 5 percent allocation from total supply of rdcoin during the 12 months
-
+- Check for functionality of the drop and drop available functions
 
