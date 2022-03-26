@@ -17,8 +17,11 @@ contract Stakeable {
     event Withdraw(address account, uint amount);
 
     mapping (address => Stake) private stakes;
+    uint totalStakedTokens = 0;
+    
     uint constant ONE_WEEK = 604800000;
     uint constant ONE_MONTH = 2629800000;
+    uint constant MAX_ALLOWED_STAKES = 150000000;
 
     modifier sanityCheck (address account, uint amount) {
         require(amount > 0, "stake amount <= 0");
@@ -29,12 +32,13 @@ contract Stakeable {
     function stake (address account, uint256 amount) internal sanityCheck(account, amount) { 
         uint currentTime = block.timestamp;
         Stake storage _stake = stakes[account];
-        if (_stake.amount == 0) {
-            _stake.depositTime = currentTime;
-            _stake.lastWithdrawTime = currentTime;
-            _stake.lastRewardTime = currentTime;
-        }
-        _stake.amount += amount;
+        require(_stake.amount == 0, "can submit upto one stake");
+        require(totalStakedTokens + amount <= MAX_ALLOWED_STAKES, "total stakes exceeded 150000000");
+        _stake.amount = amount;
+        _stake.depositTime = currentTime;
+        _stake.lastWithdrawTime = currentTime;
+        _stake.lastRewardTime = currentTime;
+        totalStakedTokens += amount;
     }
     
     function withdraw(address account, uint amount) internal sanityCheck(account, amount) {
@@ -44,6 +48,7 @@ contract Stakeable {
         
         // Check withdraw conditions
         require (_stake.amount > 0, "stake amount <= 0");
+        
         uint withdrawLimit = (_stake.amount * 25) / 100;
         
         if (withdrawLimit <= amount) {
@@ -60,8 +65,8 @@ contract Stakeable {
 
         _stake.withdrawnAmount += amount;
         _stake.lastWithdrawTime = currentTime;
+        totalStakedTokens -= amount;
         
-        // TODO: Reset the _stake.amount to 0 when everything is withdrawn
         uint stakedAmount = _stake.amount - _stake.withdrawnAmount;
 
         // All staked token is withdrawn
@@ -86,14 +91,7 @@ contract Stakeable {
         uint stakedAmount = _stake.amount - _stake.withdrawnAmount;
 
         // All staked token is withdrawn
-        if (stakedAmount == 0)  {
-            _stake.amount = 0;
-            _stake.depositTime = 0;
-            _stake.lastRewardTime = 0;
-            _stake.lastWithdrawTime = 0;
-            _stake.withdrawnAmount = 0;
-            revert("no token staked");
-        }
+        require (stakedAmount > 0, "no token staked");
 
         uint rewardAmount = (stakedAmount * 10) / 100;
         

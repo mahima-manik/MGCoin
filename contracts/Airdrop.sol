@@ -3,9 +3,10 @@
 pragma solidity ^0.8.0;
 
 contract Airdrop {
-    uint dropStartTime;
+    uint immutable dropStartTime;
+    uint immutable dropEndTime;
     uint lastDropTime;
-    uint dropEndTime;
+    
     uint constant MAX_LIMIT = 150;
     uint constant TWELVE_MONTHS = 31557600000;
     uint constant ONE_DAY = 86400000;
