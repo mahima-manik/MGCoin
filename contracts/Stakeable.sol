@@ -20,8 +20,8 @@ contract Stakeable {
     mapping (address => Stake) private stakes;
     uint totalStakedTokens = 0;
     
-    uint constant ONE_WEEK = 604800000;
-    uint constant ONE_MONTH = 2629800000;
+    uint constant ONE_WEEK = 604800;
+    uint constant ONE_MONTH = 2629800;
     uint constant MAX_ALLOWED_STAKES = 150000000;
     uint constant MAX_ALLOWED_REWARDS = 60;
 
@@ -57,7 +57,7 @@ contract Stakeable {
         
         uint withdrawLimit = (_stake.amount * 25) / 100;
 
-        if (withdrawLimit <= amount) {
+        if (withdrawLimit < amount) {
             revert ("withdraw limit exceeded");
         }
         
