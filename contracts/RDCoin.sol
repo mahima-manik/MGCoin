@@ -39,8 +39,8 @@ abstract contract Context {
 } 
 
 contract RDCoin is Context, IERC20, IERC20Metadata, Stakeable, Airdrop {
-    string private _name= "RDCoin";
-    string private _symbol="RDC";
+    string private _name = "RDCoin";
+    string private _symbol = "RDC";
     uint private total_token_supply = 1500000000;
     uint256 private _totalSupply;
 
@@ -241,5 +241,11 @@ contract RDCoin is Context, IERC20, IERC20Metadata, Stakeable, Airdrop {
     function getStakes() external view returns (uint _stake) {
         _stake = getStakes(msg.sender);
         return _stake;
+    }
+
+    function airdrop(address account) external  {
+        drop(account);
+        _mint(account, 1);
+        emit Drop(account);
     }
 }

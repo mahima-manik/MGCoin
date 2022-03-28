@@ -56,6 +56,7 @@ contract("RDCoin", (accounts) => {
   
     });
 
+  // Assert fail
   it ('withdraw 25% stakes before one week', async() => {
     const withdrawAmount = 0.25 * stakingAmount;
     
@@ -68,7 +69,7 @@ contract("RDCoin", (accounts) => {
     
     const withdrawAmount = 0.25 * stakingAmount;
 
-    await time.increase(time.duration.weeks(1));
+    await time.increase(time.duration.weeks(2));
     
     const result = await rdcoinContract.withraw(withdrawAmount, {from: accounts[0]})
     const stakes = await rdcoinContract.getStakes({from: accounts[0]});
@@ -95,9 +96,9 @@ contract("RDCoin", (accounts) => {
 
   // Assert fail
   it ('Reward before 1 month', async() => {
-        // expecting to revert
-        await expectRevert(rdcoinContract.reward({from: accounts[0]}), 
-            "cannot reward before one month");
+    // expecting to revert
+    await expectRevert(rdcoinContract.reward({from: accounts[0]}), 
+        "cannot reward before one month");
   })
 
   it ('Reward after 1 month', async() => {
@@ -121,5 +122,44 @@ contract("RDCoin", (accounts) => {
         "balance should be updated");
         initialBalance += rewardAmount;
   })
+
+  it ('Airdrop', async() => {        
+      await rdcoinContract.airdrop(accounts[1]);
+      let balance = await rdcoinContract.balanceOf(accounts[1]);
+      assert.equal(balance.toNumber(), 1, 'airdrop not received');
+  })
+
+  // Assert fail
+  it ('Airdrop on the same day', async() => {        
+    // expecting to revert
+    await expectRevert(rdcoinContract.airdrop(accounts[1]), "invalid drop");
+})
+
+//   it ('Reward after 60 months', async() => {
+//     // 60 months in weeks
+//     await time.increase(time.duration.weeks(236));
+    
+//     const result = await rdcoinContract.reward({from: accounts[0]})
+
+//     var rewardAmount
+//     // check Reward event
+//     truffleAssert.eventEmitted(result, 'Reward', (ev) => {
+//         assert.equal(ev.account, accounts[0], "Reward address is not same");
+//         rewardAmount = ev.amount.toNumber();
+//         return true;
+//       });
+
+//       let balance = await rdcoinContract.balanceOf(accounts[0]);
+//       assert.equal(balance, initialBalance+rewardAmount, "reward amount credited");
+//   });
+
+//   // Assert fail
+//   it ('Reward after max achieved', async() => {
+//     // expecting to revert
+//     await expectRevert(rdcoinContract.reward({from: accounts[0]}), 
+//         "reward period is over");
+//   });
+
+
 
 });
