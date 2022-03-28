@@ -10,6 +10,7 @@ contract Stakeable {
         uint withdrawnAmount;   // withdrawn stake amount
         uint lastWithdrawTime;  // last withdraw time
         uint lastRewardTime;    // last reward time
+        uint rewardCount;       // can reward upto 60 months
     }
 
     event Staked(address account, uint amount);
@@ -22,6 +23,7 @@ contract Stakeable {
     uint constant ONE_WEEK = 604800000;
     uint constant ONE_MONTH = 2629800000;
     uint constant MAX_ALLOWED_STAKES = 150000000;
+    uint constant MAX_ALLOWED_REWARDS = 60;
 
     modifier sanityCheck (address account, uint amount) {
         require(amount > 0, "stake amount <= 0");
@@ -30,18 +32,22 @@ contract Stakeable {
     }
 
     function stake (address account, uint256 amount) internal sanityCheck(account, amount) { 
+        
         uint currentTime = block.timestamp;
         Stake storage _stake = stakes[account];
+        
         require(_stake.amount == 0, "can submit upto one stake");
         require(totalStakedTokens + amount <= MAX_ALLOWED_STAKES, "total stakes exceeded 150000000");
+        
         _stake.amount = amount;
         _stake.depositTime = currentTime;
         _stake.lastWithdrawTime = currentTime;
         _stake.lastRewardTime = currentTime;
+        
         totalStakedTokens += amount;
     }
     
-    function withdraw(address account, uint amount) internal sanityCheck(account, amount) {
+    function withdraw (address account, uint amount) internal sanityCheck(account, amount) {
         
         uint currentTime = block.timestamp;
         Stake storage _stake = stakes[account];
@@ -50,7 +56,7 @@ contract Stakeable {
         require (_stake.amount > 0, "stake amount <= 0");
         
         uint withdrawLimit = (_stake.amount * 25) / 100;
-        
+
         if (withdrawLimit <= amount) {
             revert ("withdraw limit exceeded");
         }
@@ -92,6 +98,9 @@ contract Stakeable {
 
         // All staked token is withdrawn
         require (stakedAmount > 0, "no token staked");
+
+        uint numberOfMonths = (currentTime - _stake.lastWithdrawTime) / ONE_MONTH;
+        require (_stake.rewardCount + numberOfMonths <= MAX_ALLOWED_REWARDS, "reward period is over");
 
         uint rewardAmount = (stakedAmount * 10) / 100;
         
