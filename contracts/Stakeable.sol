@@ -94,8 +94,7 @@ contract Stakeable {
 
         // All staked token is withdrawn
         require (stakedAmount > 0, "no token staked");
-        
-                
+
         // Check reward condition
         bool isEligible = timeDifference(_stake.lastWithdrawTime, currentTime, ONE_MONTH);
         require(isEligible, "cannot reward before one month");
@@ -104,9 +103,11 @@ contract Stakeable {
         uint numberOfMonths = (currentTime - _stake.lastWithdrawTime) / ONE_MONTH;
         require (_stake.rewardCount + numberOfMonths <= MAX_ALLOWED_REWARDS, "reward period is over");
 
-        uint rewardAmount = (stakedAmount * 10) / 100;
+        uint rewardAmount = (stakedAmount * 10 * numberOfMonths) / 100;
         
+        _stake.rewardCount += numberOfMonths;
         _stake.lastRewardTime = currentTime;
+        
         return rewardAmount;
     }
 
