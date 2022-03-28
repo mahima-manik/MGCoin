@@ -21,7 +21,7 @@ contract Stakeable {
     uint totalStakedTokens = 0;
     
     uint constant ONE_WEEK = 604800;
-    uint constant ONE_MONTH = 2629800;
+    uint constant ONE_MONTH = 2419200;
     uint constant MAX_ALLOWED_STAKES = 150000000;
     uint constant MAX_ALLOWED_REWARDS = 60;
 
@@ -89,15 +89,17 @@ contract Stakeable {
     function reward(address account) internal returns (uint) {
         uint currentTime = block.timestamp;
         Stake storage _stake = stakes[account];
-        
-        // Check reward condition
-        bool isEligible = timeDifference(_stake.lastWithdrawTime, currentTime, ONE_MONTH);
-        require(isEligible, "cannot reward before one month");
 
         uint stakedAmount = _stake.amount - _stake.withdrawnAmount;
 
         // All staked token is withdrawn
         require (stakedAmount > 0, "no token staked");
+        
+                
+        // Check reward condition
+        bool isEligible = timeDifference(_stake.lastWithdrawTime, currentTime, ONE_MONTH);
+        require(isEligible, "cannot reward before one month");
+
 
         uint numberOfMonths = (currentTime - _stake.lastWithdrawTime) / ONE_MONTH;
         require (_stake.rewardCount + numberOfMonths <= MAX_ALLOWED_REWARDS, "reward period is over");

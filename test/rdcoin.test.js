@@ -8,13 +8,21 @@ const { expectRevert } = require('@openzeppelin/test-helpers');
 contract("RDCoin", (accounts) => {
   
   const stakingAmount = 1000;
-
+  let initialBalance = 0;
   before(async () => {
     stakeContract = await Stakeable.deployed();
     airdropContract = await Airdrop.deployed();
     rdcoinContract = await RDCoin.deployed();
     initialBalance = await rdcoinContract.balanceOf(accounts[0]);
   });
+
+  // Assert fail
+  it ('Withdraw without staking', async() => {
+        // expecting to revert
+        await expectRevert(rdcoinContract.reward({from: accounts[0]}), 
+            "no token staked");
+  })
+
 
   it ('Add stakes above MAX_ALLOWED_STAKES', async () => {
     const stakingAmount = 150000001;
@@ -43,8 +51,10 @@ contract("RDCoin", (accounts) => {
     let balance = await rdcoinContract.balanceOf(accounts[0]);
     assert.equal(balance, initialBalance-stakingAmount, 
         "balance should reduce after staking");
-
-  });
+    
+    initialBalance -= stakingAmount;
+  
+    });
 
   it ('withdraw 25% stakes before one week', async() => {
     const withdrawAmount = 0.25 * stakingAmount;
@@ -76,8 +86,40 @@ contract("RDCoin", (accounts) => {
 
     // check balance
     let balance = await rdcoinContract.balanceOf(accounts[0]);
-    assert.equal(balance, initialBalance-stakingAmount+withdrawAmount, 
+    assert.equal(balance, initialBalance + withdrawAmount, 
         "balance should be updated");
+
+    initialBalance += withdrawAmount;
+
+  })
+
+  // Assert fail
+  it ('Reward before 1 month', async() => {
+        // expecting to revert
+        await expectRevert(rdcoinContract.reward({from: accounts[0]}), 
+            "cannot reward before one month");
+  })
+
+  it ('Reward after 1 month', async() => {
+    
+    await time.increase(time.duration.days(29));
+    
+    const result = await rdcoinContract.reward({from: accounts[0]})
+    const stakes = await rdcoinContract.getStakes({from: accounts[0]});
+
+    let rewardAmount =  0.1 * stakes;
+    // check Reward event
+    truffleAssert.eventEmitted(result, 'Reward', (ev) => {
+      assert.equal(ev.account, accounts[0], "Reward address is not same");
+      assert.equal(ev.amount, rewardAmount, "Reward amount is not same");
+      return true;
+    });
+
+    // check balance
+    let balance = await rdcoinContract.balanceOf(accounts[0]);
+    assert.equal(balance, initialBalance + rewardAmount,
+        "balance should be updated");
+        initialBalance += rewardAmount;
   })
 
 });
