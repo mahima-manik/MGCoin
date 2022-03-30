@@ -17,8 +17,8 @@ contract Airdrop {
 
     constructor()    {
         dropStartTime = block.timestamp;
-        lastDropTime = dropStartTime;
-        dropEndTime = dropStartTime + TWELVE_MONTHS;
+        lastDropTime = block.timestamp;
+        dropEndTime = block.timestamp + TWELVE_MONTHS;
     }
 
     function drop (address account) internal {
