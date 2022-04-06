@@ -38,9 +38,9 @@ abstract contract Context {
     }
 } 
 
-contract RDCoin is Context, IERC20, IERC20Metadata, Stakeable, Airdrop {
-    string private _name = "RDCoin";
-    string private _symbol = "RDC";
+contract MGCoin is Context, IERC20, IERC20Metadata, Stakeable, Airdrop {
+    string private _name = "MGCoin";
+    string private _symbol = "MGC";
     uint private total_token_supply = 1500000000;
     uint256 private _totalSupply;
 

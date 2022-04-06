@@ -1,25 +1,25 @@
 const Stakeable = artifacts.require("Stakeable");
 const Airdrop = artifacts.require("Airdrop");
-const RDCoin = artifacts.require("RDCoin");
+const MGCoin = artifacts.require("MGCoin");
 const truffleAssert = require('truffle-assertions');
 const { time } = require('@openzeppelin/test-helpers');
 const { expectRevert } = require('@openzeppelin/test-helpers');
 
-contract("RDCoin", (accounts) => {
+contract("MGCoin", (accounts) => {
   
   const stakingAmount = 1000;
   let initialBalance = 0;
   before(async () => {
     stakeContract = await Stakeable.deployed();
     airdropContract = await Airdrop.deployed();
-    rdcoinContract = await RDCoin.deployed();
-    initialBalance = await rdcoinContract.balanceOf(accounts[0]);
+    mgcoinContract = await MGCoin.deployed();
+    initialBalance = await mgcoinContract.balanceOf(accounts[0]);
   });
 
   // Assert fail
   it ('Withdraw without staking', async() => {
         // expecting to revert
-        await expectRevert(rdcoinContract.reward({from: accounts[0]}), 
+        await expectRevert(mgcoinContract.reward({from: accounts[0]}), 
             "no token staked");
   })
 
@@ -28,13 +28,13 @@ contract("RDCoin", (accounts) => {
     const stakingAmount = 150000001;
 
     // expecting to revert
-    truffleAssert.reverts(rdcoinContract.stake(stakingAmount, {from: accounts[0]}), 'total stakes exceeded 150000000');
+    truffleAssert.reverts(mgcoinContract.stake(stakingAmount, {from: accounts[0]}), 'total stakes exceeded 150000000');
   });
 
   it ('Add stakes', async () => {
     
-    const result = await rdcoinContract.stake(stakingAmount, {from: accounts[0]});
-    const stakes = await rdcoinContract.getStakes({from: accounts[0]});
+    const result = await mgcoinContract.stake(stakingAmount, {from: accounts[0]});
+    const stakes = await mgcoinContract.getStakes({from: accounts[0]});
     
     // check staked event and 
     truffleAssert.eventEmitted(result, 'Staked', (ev) => {
@@ -48,7 +48,7 @@ contract("RDCoin", (accounts) => {
         "Staked amount is not same");
 
     // check balance
-    let balance = await rdcoinContract.balanceOf(accounts[0]);
+    let balance = await mgcoinContract.balanceOf(accounts[0]);
     assert.equal(balance, initialBalance-stakingAmount, 
         "balance should reduce after staking");
     
@@ -61,7 +61,7 @@ contract("RDCoin", (accounts) => {
     const withdrawAmount = 0.25 * stakingAmount;
     
     // expecting to revert
-    await expectRevert(rdcoinContract.withraw(withdrawAmount, {from: accounts[0]}), 
+    await expectRevert(mgcoinContract.withraw(withdrawAmount, {from: accounts[0]}), 
         "cannot withdraw before one week");
   })
 
@@ -71,8 +71,8 @@ contract("RDCoin", (accounts) => {
 
     await time.increase(time.duration.weeks(2));
     
-    const result = await rdcoinContract.withraw(withdrawAmount, {from: accounts[0]})
-    const stakes = await rdcoinContract.getStakes({from: accounts[0]});
+    const result = await mgcoinContract.withraw(withdrawAmount, {from: accounts[0]})
+    const stakes = await mgcoinContract.getStakes({from: accounts[0]});
 
     // check Withdraw event
     truffleAssert.eventEmitted(result, 'Withdraw', (ev) => {
@@ -86,7 +86,7 @@ contract("RDCoin", (accounts) => {
         "Staked amount is not same");
 
     // check balance
-    let balance = await rdcoinContract.balanceOf(accounts[0]);
+    let balance = await mgcoinContract.balanceOf(accounts[0]);
     assert.equal(balance, initialBalance + withdrawAmount, 
         "balance should be updated");
 
@@ -97,7 +97,7 @@ contract("RDCoin", (accounts) => {
   // Assert fail
   it ('Reward before 1 month', async() => {
     // expecting to revert
-    await expectRevert(rdcoinContract.reward({from: accounts[0]}), 
+    await expectRevert(mgcoinContract.reward({from: accounts[0]}), 
         "cannot reward before one month");
   })
 
@@ -105,8 +105,8 @@ contract("RDCoin", (accounts) => {
     
     await time.increase(time.duration.days(29));
     
-    const result = await rdcoinContract.reward({from: accounts[0]})
-    const stakes = await rdcoinContract.getStakes({from: accounts[0]});
+    const result = await mgcoinContract.reward({from: accounts[0]})
+    const stakes = await mgcoinContract.getStakes({from: accounts[0]});
 
     let rewardAmount =  0.1 * stakes;
     // check Reward event
@@ -117,29 +117,29 @@ contract("RDCoin", (accounts) => {
     });
 
     // check balance
-    let balance = await rdcoinContract.balanceOf(accounts[0]);
+    let balance = await mgcoinContract.balanceOf(accounts[0]);
     assert.equal(balance, initialBalance + rewardAmount,
         "balance should be updated");
         initialBalance += rewardAmount;
   })
 
   it ('Airdrop', async() => {        
-      await rdcoinContract.airdrop(accounts[1]);
-      let balance = await rdcoinContract.balanceOf(accounts[1]);
+      await mgcoinContract.airdrop(accounts[1]);
+      let balance = await mgcoinContract.balanceOf(accounts[1]);
       assert.equal(balance.toNumber(), 1, 'airdrop not received');
   })
 
   // Assert fail
   it ('Airdrop on the same day', async() => {        
     // expecting to revert
-    await expectRevert(rdcoinContract.airdrop(accounts[1]), "invalid drop");
+    await expectRevert(mgcoinContract.airdrop(accounts[1]), "invalid drop");
 })
 
 //   it ('Reward after 60 months', async() => {
 //     // 60 months in weeks
 //     await time.increase(time.duration.weeks(236));
     
-//     const result = await rdcoinContract.reward({from: accounts[0]})
+//     const result = await mgcoinContract.reward({from: accounts[0]})
 
 //     var rewardAmount
 //     // check Reward event
@@ -149,14 +149,14 @@ contract("RDCoin", (accounts) => {
 //         return true;
 //       });
 
-//       let balance = await rdcoinContract.balanceOf(accounts[0]);
+//       let balance = await mgcoinContract.balanceOf(accounts[0]);
 //       assert.equal(balance, initialBalance+rewardAmount, "reward amount credited");
 //   });
 
 //   // Assert fail
 //   it ('Reward after max achieved', async() => {
 //     // expecting to revert
-//     await expectRevert(rdcoinContract.reward({from: accounts[0]}), 
+//     await expectRevert(mgcoinContract.reward({from: accounts[0]}), 
 //         "reward period is over");
 //   });
 
